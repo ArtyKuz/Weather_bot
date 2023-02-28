@@ -5,7 +5,6 @@ from Keyboards import Keyboard_prognoz, Keyboard
 from services import get_prognoz
 
 
-
 data = {}
 
 
