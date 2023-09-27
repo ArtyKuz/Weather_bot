@@ -1,9 +1,9 @@
 import asyncio
 
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
-from user_handlers import register_user_handlers
 from config import Config, load_config
+from user_handlers import register_user_handlers
 
 config: Config = load_config()
 storage = MemoryStorage()

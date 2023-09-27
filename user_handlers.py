@@ -1,8 +1,9 @@
-from aiogram import types, Dispatcher
-from aiogram.types import ReplyKeyboardRemove
-from aiogram.dispatcher.storage import FSMContext
 import datetime
-from Keyboards import Keyboard_prognoz, Keyboard
+
+from aiogram import Dispatcher, types
+from aiogram.dispatcher.storage import FSMContext
+from aiogram.types import ReplyKeyboardRemove
+from Keyboards import Keyboard, Keyboard_prognoz
 from services import get_prognoz
 
 
