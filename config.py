@@ -10,4 +10,4 @@ class Config:
 def load_config(path: str | None = None) -> Config:
     env = Env()
     env.read_env(path)
-    return Config(token=env('POGODA_BOT_TOKEN'))
+    return Config(token=env('WEATHER_BOT_TOKEN'))

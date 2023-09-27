@@ -1,63 +1,63 @@
 from aiogram import types, Dispatcher
 from aiogram.types import ReplyKeyboardRemove
+from aiogram.dispatcher.storage import FSMContext
 import datetime
 from Keyboards import Keyboard_prognoz, Keyboard
 from services import get_prognoz
 
 
-
-data = {}
-
-
 async def process_start_command(message: types.Message):
-    global data
-    data[message.from_user.id] = [0, 0, 0, 0]
     await message.answer(
         f'Привет {message.from_user.first_name}! Напиши город в котором ты хочешь узнать прогноз погоды.')
 
 
 async def process_help_command(message: types.Message):
     await message.answer('Бот предоставляет прогноз на сегодня и на завтра\n\n'
-                         'Кнопка "Народный прогноз" предоставляет информацию о народных приметах связанных с этим днём.')
+                         'Кнопка "Народный прогноз" предоставляет информацию '
+                         'о народных приметах связанных с этим днём.')
 
 
-async def process_get_prognoz(message: types.Message):
-    global data
-    city = message.text.lower().replace(' ', '-')
-    data[message.from_user.id][0] = city
-    current_date = datetime.date.today()
-    tomorrow_date = current_date + datetime.timedelta(days=1)
+async def process_get_prognoz(message: types.Message, state: FSMContext):
+    city = message.text.lower().strip().replace(' ', '-')
+    async with state.proxy() as data:
+        data['city'] = city
+        current_date = datetime.date.today()
+        tomorrow_date = current_date + datetime.timedelta(days=1)
 
-    weather_today = get_prognoz(data[message.from_user.id][0], current_date)
-    weather_tomorrow = get_prognoz(data[message.from_user.id][0], tomorrow_date)
-    if weather_today == False:
-        await message.answer('К сожалению я не владею информацией о погоде в этом городе.')
-    else:
-        data[message.from_user.id][1] = weather_today
-        data[message.from_user.id][2] = weather_tomorrow
-        await message.answer(
-            'Отлично! По этому городу у меня есть прогноз!\n\nКакой прогноз тебя интересует?\nВыбирай ниже ⬇',
-            reply_markup=Keyboard_prognoz)
-
-
-async def process_weather_today(message: types.Message):
-    await message.answer(text=f'<b>Погода на сегодня:</b>\n'
-                              f'Температура ночью: от {data[message.from_user.id][1]["weather_night_1"]} до {data[message.from_user.id][1]["weather_night_2"]}\n'
-                              f'Температура днём: от {data[message.from_user.id][1]["weather_day_1"]} до {data[message.from_user.id][1]["weather_day_2"]}\n\n'
-                              f'{data[message.from_user.id][1]["text_prognoz"]}',
-                         reply_markup=Keyboard, parse_mode='html')
+        weather_today = get_prognoz(city, current_date)
+        weather_tomorrow = get_prognoz(city, tomorrow_date)
+        if not weather_today:
+            await message.answer('К сожалению я не владею информацией о погоде в этом городе.')
+        else:
+            data['today'] = weather_today
+            data['tomorrow'] = weather_tomorrow
+            await message.answer(
+                'Отлично! По этому городу у меня есть прогноз!\n\nКакой прогноз тебя интересует?\nВыбирай ниже ⬇',
+                reply_markup=Keyboard_prognoz)
 
 
-async def process_weather_tomorrow(message: types.Message):
-    await message.answer(text=f'<b>Погода на завтра:</b>\n'
-                              f'Температура ночью: от {data[message.from_user.id][2]["weather_night_1"]} до {data[message.from_user.id][2]["weather_night_2"]}\n'
-                              f'Температура днём: от {data[message.from_user.id][2]["weather_day_1"]} до {data[message.from_user.id][2]["weather_day_2"]}\n\n'
-                              f'{data[message.from_user.id][2]["text_prognoz"]}',
-                         reply_markup=Keyboard, parse_mode='html')
+async def process_weather_today(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        await message.answer(text=f'<b>Погода на сегодня:</b>\n'
+                                  f'Температура днём: от {data["today"]["day_1"]} до {data["today"]["day_2"]}\n'
+                                  f'Температура ночью: от {data["today"]["night_1"]} до {data["today"]["night_2"]}\n\n'
+                                  f'{data["today"]["text_prognoz"]}',
+                             reply_markup=Keyboard, parse_mode='html')
 
 
-async def process_narodny_prognoz(message: types.Message):
-    await message.answer(f'{data[message.from_user.id][1]["narodny_prognoz"]}', reply_markup=Keyboard)
+async def process_weather_tomorrow(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        await message.answer(text=f'<b>Погода на завтра:</b>\n'
+                                  f'Температура днём: от {data["tomorrow"]["day_1"]} до {data["tomorrow"]["day_2"]}\n'
+                                  f'Температура ночью: от {data["tomorrow"]["night_1"]} до '
+                                  f'{data["tomorrow"]["night_2"]}\n\n'
+                                  f'{data["tomorrow"]["text_prognoz"]}',
+                             reply_markup=Keyboard, parse_mode='html')
+
+
+async def process_narodny_prognoz(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        await message.answer(f'{data["today"]["narodny_prognoz"]}', reply_markup=Keyboard)
 
 
 async def process_other_prognoz(message: types.Message):
