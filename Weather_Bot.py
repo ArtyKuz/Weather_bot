@@ -2,6 +2,7 @@ import asyncio
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+
 from config import Config, load_config
 from user_handlers import register_user_handlers
 
