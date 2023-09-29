@@ -4,7 +4,7 @@ from aiogram import Dispatcher, types
 from aiogram.dispatcher.storage import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 from Keyboards import Keyboard, Keyboard_prognoz
-from services import get_prognoz
+from services import get_forecast
 
 
 async def process_start_command(message: types.Message):
@@ -18,15 +18,15 @@ async def process_help_command(message: types.Message):
                          'о народных приметах связанных с этим днём.')
 
 
-async def process_get_prognoz(message: types.Message, state: FSMContext):
+async def process_get_forecast(message: types.Message, state: FSMContext):
     city = message.text.lower().strip().replace(' ', '-')
     async with state.proxy() as data:
         data['city'] = city
         current_date = datetime.date.today()
         tomorrow_date = current_date + datetime.timedelta(days=1)
 
-        weather_today = get_prognoz(city, current_date)
-        weather_tomorrow = get_prognoz(city, tomorrow_date)
+        weather_today = await get_forecast(city, current_date)
+        weather_tomorrow = await get_forecast(city, tomorrow_date)
         if not weather_today:
             await message.answer('К сожалению я не владею информацией о погоде в этом городе.')
         else:
@@ -56,12 +56,12 @@ async def process_weather_tomorrow(message: types.Message, state: FSMContext):
                              reply_markup=Keyboard, parse_mode='html')
 
 
-async def process_narodny_prognoz(message: types.Message, state: FSMContext):
+async def process_narodny_forecast(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         await message.answer(f'{data["today"]["narodny_prognoz"]}', reply_markup=Keyboard)
 
 
-async def process_other_prognoz(message: types.Message):
+async def process_other_forecast(message: types.Message):
     await message.answer('Выбирай какой еще прогноз хочешь посмотреть ⬇', reply_markup=Keyboard_prognoz)
 
 
@@ -80,8 +80,8 @@ def register_user_handlers(dp: Dispatcher):
     dp.register_message_handler(process_help_command, commands='help')
     dp.register_message_handler(process_weather_today, text='Прогноз на сегодня')
     dp.register_message_handler(process_weather_tomorrow, text='Прогноз на завтра')
-    dp.register_message_handler(process_narodny_prognoz, text='🌞Народный прогноз🌞')
-    dp.register_message_handler(process_other_prognoz, text='Посмотреть другой прогноз ♻')
+    dp.register_message_handler(process_narodny_forecast, text='🌞Народный прогноз🌞')
+    dp.register_message_handler(process_other_forecast, text='Посмотреть другой прогноз ♻')
     dp.register_message_handler(process_other_city, text='Выбрать другой город 🏙')
     dp.register_message_handler(process_exit, text='Выход ❌')
-    dp.register_message_handler(process_get_prognoz)
+    dp.register_message_handler(process_get_forecast)
