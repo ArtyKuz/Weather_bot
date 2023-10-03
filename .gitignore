@@ -1,2 +1,3 @@
 .env
 .gitignore
+/.pytest_cache/
